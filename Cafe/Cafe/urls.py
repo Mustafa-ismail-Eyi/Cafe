@@ -18,6 +18,7 @@ from django.urls import path, include
 from django.shortcuts import redirect
 
 urlpatterns = [
+    # The path below does when the user hits the '/' which is root redirect to '/cafe_order/'
     path('', lambda req: redirect('/cafe_order/')),
     path('cafe_order/', include('cafe_order.urls')),
     path('admin/', admin.site.urls),

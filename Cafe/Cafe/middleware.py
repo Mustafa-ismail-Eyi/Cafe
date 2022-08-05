@@ -5,6 +5,8 @@ from django.shortcuts import redirect
 
 import settings
 
+
+# This class controls the session
 class SessionIdleTimeout:
     def process_request(self, request):
         if request.user.is_authenticated():

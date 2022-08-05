@@ -16,7 +16,9 @@ from django import template
 def welcome(request):
     return render(request, 'cafe_order/welcome.html')
 
-# Create your views here.
+# This view renders a registration form
+# The view controls the is user already in database or not
+# And also user both saved on Customer model and django admin's user model
 def customer_register(request):
     if request.method == 'POST':
         form = CustomerRegisterInForm(request.POST)
@@ -49,7 +51,8 @@ def customer_register(request):
     return render(request, "cafe_order/customer_register.html", context)
 
 
-
+# This view renders a login form
+# with help of authenticate function users get in
 def customer_login(request):
     if request.user.is_authenticated:
         return redirect('cafe_order:home')
@@ -72,18 +75,21 @@ def customer_login(request):
         }
         return render(request, 'cafe_order/customer_login.html', context)
 
+# This views where the customer pick foods in other words items into cart 
 @login_required(login_url='cafe_order:login')
 def customer_home(request):
     foods = Foods.objects.all()
-
     context = {'foods': foods}
     return render(request, 'cafe_order/customer_home.html',context=context)
 
+# This helps logout the customer
+# Customer session lifetime is already controlled by SessionIdleTimeout which is in Cafe/middleware.py
 @login_required(login_url='cafe_order:login')
 def customer_logout(request):
     logout(request)
     return redirect('cafe_order:login')
 
+# when user add an food on cart it creates a order until confirms her order item will added on that created order 
 @login_required(login_url='cafe_order:login')
 def create_order(request,id):
     customer =  Customer.objects.filter(customer_email__iregex=f'{request.user}+@.+')[0]
@@ -101,14 +107,10 @@ def create_order(request,id):
         food_list = OrderFoods(order_id = order, food_id = Foods.objects.get(id=int(id)))
         food_list.save()
     return redirect('cafe_order:home')
-    #return HttpResponse(f"{request.user} want to bought this item {Foods.objects.filter(id=int(id))[0].id}\n {food_list}")
-    # return HttpResponse(f"{ Customer.objects.filter(customer_email__iregex=f'{request.user}+@.+')[0].id }")
 
+# This views render the customer's current active cart
 @login_required(login_url='cafe_order:login')
 def list_orders(request):
-    # customer =  Customer.objects.filter(customer_email__iregex=f'{request.user}+@.+')[0]
-    # order = Order.objects.filter(customer_id = customer.id, order_status = Order.STATUS[0][0])
-    # order_foods = OrderFoods.objects.filter(order_id = order)[0]
 
     order_foods = OrderFoods.objects.filter(order_id__customer_id=Customer.objects.get(customer_email__iregex=f'{request.user}+@.+'),
                                             order_id__order_status = Order.STATUS[0][0]                                         
@@ -128,6 +130,7 @@ def list_orders(request):
         }
     return render(request, 'cafe_order/customer_active_orders.html',context=context)
 
+# Customer can remove the foods from cart before she confirms
 @login_required(login_url='cafe_order:login')
 def delete_food(request, id):
     OrderFoods.objects.filter(id=id).delete()
@@ -135,6 +138,7 @@ def delete_food(request, id):
     #return redirect('cafe_order:list_orders')
     return redirect(request.META.get('HTTP_REFERER'))
 
+# Customer confirms the current cart and status of order is changed
 @login_required(login_url='cafe_order:login')
 def confirm_order(request,id):
     order = Order.objects.get(id=int(id))
@@ -143,6 +147,7 @@ def confirm_order(request,id):
     # return (f"Do you want to confirm this that item? {id}")
     return redirect('cafe_order:home')
 
+#This view renders the list of confirmed order which status are 'delivery taken'
 @login_required(login_url='cafe_order:login')
 def confirmed_order(request):
 
@@ -164,34 +169,32 @@ def confirmed_order(request):
         }
     return render(request, 'cafe_order/customer_confirmed_orders.html',context=context)
 
-@login_required(login_url='cafe_order:login')
-def delete_order(request, id):
-    pass
 
-
+# This view lists the previous orders' informations of customer
 @login_required(login_url='cafe_order:login')
 def list_confirmed_orders(request):
-    # print(
-    #     Order.objects.filter(customer_id__customer_email__iregex=f'{request.user}+@.+')
-    #     .exclude(order_status = Order.STATUS[0][0])
-    #     .values('orderfoods__food_id__food_name')
-    #     .annotate(total_foods=Count('orderfoods__food_id__food_name'), price=Sum('orderfoods__food_id__food_price')).values().last()
-    # )
+    orders = Order.objects.filter(customer_id__customer_email__iregex=f'{request.user}+@.+')\
+    .exclude(order_status__in = [Order.STATUS[0][0],Order.STATUS[1][0]])\
+    .values('orderfoods__order_id')\
+    .annotate(total_foods=Count('orderfoods__food_id__food_name'), price=Sum('orderfoods__food_id__food_price')) \
+    .values() \
+    .order_by('order_recieved_date')
+    if orders:
+        order_dict = {}
+        for x in orders:
 
-    # print(
-    # OrderFoods.objects.filter(order_id__customer_id__customer_email__iregex=f'{request.user}+@.+')
-    # .exclude(order_id__order_status = Order.STATUS[0][0])
-    # #.values('food_id__food_name','food_id__food_price')
-    # .values('order_id')
-    # .annotate(total_foods=Count('food_id__food_name'), price=Sum('food_id__food_price')).values(), '\n'
-    # )
-    print(
-    Order.objects.filter(customer_id__customer_email__iregex=f'{request.user}+@.+')
-    .exclude(order_status__in = [Order.STATUS[0][0],Order.STATUS[1][0]])
-    #.values('food_id__food_name','food_id__food_price')
-    .values('orderfoods__order_id')
-    .annotate(total_foods=Count('orderfoods__food_id__food_name'), price=Sum('orderfoods__food_id__food_price'))
-    .values()
-    .order_by('order_recieved_date'), '\n'
-    )
+            order_dict[x['id']]={
+                'order_recieved_date':x['order_recieved_date'],
+                'order_status': x['order_status'],
+                'total_foods': x['total_foods'],
+                'price': x['price']
+            }
+    else:
+        order_dict = {}
+    
+    context = {
+        'order_dict': order_dict
+    }
+    return render(request, 'cafe_order/customer_previous_orders.html',context)
+
 

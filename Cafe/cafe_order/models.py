@@ -1,7 +1,7 @@
 from xml.parsers.expat import model
 from django.db import models
 
-# Create your models here.
+
 class Customer(models.Model):
     customer_username = models.CharField(max_length=254)
     customer_name_surname = models.CharField(max_length=128)
