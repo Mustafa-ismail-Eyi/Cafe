@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+
+<body>
+    {% csrf_token %}
+    {% load my_templatetag %}
+    hello {{request.user}} <br>
+
+    <br><br>
+    
+<!--{#    {%for food in order_foods%}
+    {food.order_id}
+    <p>Order id: {order_id|get_by_index:forloop.counter0}</p>
+    <p>Food Name:{{food.food_id.food_name}}</p>
+    <p>Price: {{food.food_id.food_price}}</p>
+    <p>Status: {{food.order_id.order_status}}</p>
+    <p>Recieved Date: {{food.order_id.order_recieved_date|date:"M d, Y"}}</p>
+    {%endfor%}
+#}-->
+
+    {%for order in order_id%}
+        <h1>Order id: {{order.id}}</h1>
+        <p>Order Status: {{order.order_status}}</p>
+        {%for food in order_foods|get_foods:order.id%}
+            <p>Food Name:{{food.food_id.food_name}}</p>
+            <p>Price: {{food.food_id.food_price}}</p>
+        {%endfor%}
+    {%endfor%}
+    <span><a class="hello-msg" href="{% url 'cafe_order:logout' %}">Logout</a></span><br>
+    <span><a class="hello-msg" href="{% url 'cafe_order:home' %}">Home</a></span><br>
+</body>
+
+</html>

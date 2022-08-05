@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+
+<body>
+    {% csrf_token %}
+    hello {{request.user}} <br>
+    <a href="{% url 'cafe_order:list_orders' %}">
+        <button type="submit">My Cart</button>
+    </a><br>
+    <a href="{% url 'cafe_order:confirmed_order' %}">
+        <button type="submit">My Orders</button>
+    </a><br>
+    <a href="{% url 'cafe_order:list_confirmed_orders' %}">
+        <button type="submit">My Previous Orders</button>
+    </a><br>
+    {%for food in foods%}
+    <h1> The {{food.food_name}}</h1>
+    <p>{{food.food_description|lower}}</p>
+    <p>{{food.food_price}}</p>
+    <a href="{% url 'cafe_order:create_order' id=food.id %}">
+        <button type="submit">Add to cart</button>
+    </a><br>
+    {%endfor%}
+    <span><a class="hello-msg" href="{% url 'cafe_order:logout' %}">Logout</a></span><br>
+    <!-- <span><a class="hello-msg" href="{% url 'cafe_order:home'%}">Back to Home</a></span><br> -->
+</body>
+
+</html>
